@@ -38,6 +38,43 @@ try {
 	var_dump($e); // error via exception
 }
 
+
+// load all hostings info
+$userId = $userInfo->id;
+try {
+    $hostingsInfo = $api->get(sprintf('user/%d/hosting', $userId));
+    var_dump($hostingsInfo);
+} catch (\websupport\RestException $e) {
+    var_dump($e); // error via exception
+}
+
+// load all hosting's mailboxes
+$hostingId = $hostingsInfo->items[0]->id;
+try {
+    $mailboxesInfo = $api->get(sprintf('user/%d/hosting/%d/mailbox', $userId, $hostingId));
+    var_dump($mailboxesInfo);
+} catch (\websupport\RestException $e) {
+    var_dump($e); // error via exception
+}
+
+// create new mailbox
+$domainId = array_keys((array)$mailboxesInfo->domains)[0];
+try {
+    $mailboxData = [
+        'email'=> 'foonew',
+        'password'=> 'testpassword',
+        'ipCheck'=> true,
+        'ips'=> ['1.2.3.4', '8.8.8.8'],
+        'countryCheck'=> true,
+        'countries'=> ['SK', 'CZ', 'HU' ],
+        'note'=> 'test'
+    ];
+    $mailbox = $api->post(sprintf('user/%d/hosting/%d/domain/%d/mailbox', $userId, $hostingId, $domainId), $mailboxData);
+    var_dump($mailbox);
+} catch (\websupport\RestException $e) {
+    var_dump($e); // error via exception
+}
+
 // ordering domain
 try {
 	$orderInfo = $api->post('user/self/order', array(
