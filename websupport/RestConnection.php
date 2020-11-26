@@ -5,6 +5,8 @@ use Exception;
 
 class RestConnection {
 
+	const API_VERSION_URL_PATH = '/v1/';
+
 	protected $ssl = false;
 	protected $caFile;
 	protected $url;
@@ -67,21 +69,25 @@ class RestConnection {
 		if (strpos($path, $this->url) === 0) {
 			$path = substr($path, strlen($this->url) - 1);
 		}
-		
+
 		$curl = $this->getConnection();
 		curl_setopt($curl, CURLOPT_TIMEOUT, 60);
 		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $httpVerb);
 		curl_setopt($curl, CURLOPT_URL, $this->url . $path);
 		curl_setopt($curl, CURLOPT_ENCODING, 'gzip');
+
+		$time = time();
+		$signatureHMAC = $this->calculateHMACSignature($httpVerb, $path, $time);
 		curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge(array(
 			'Accept: application/json',
 			'Content-Type: application/json',
+			'Date: ' . gmdate('Ymd\THis\Z', $time),
 			'User-Agent: Websupport PHP Library',
 		), $this->aditionalHeaders));
 
 		if ($this->publicKey !== null && $this->privateKey !== null) {
 			curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-			curl_setopt($curl, CURLOPT_USERPWD, $this->publicKey . ':' . $this->privateKey);
+			curl_setopt($curl, CURLOPT_USERPWD, $this->publicKey . ':' . $signatureHMAC);
 		}
 
 		if ($this->ssl) {
@@ -111,6 +117,12 @@ class RestConnection {
 		}
 		
 		return array($response, $httpStatus);
+	}
+
+	protected function calculateHMACSignature($httpVerb, $path, $time) {
+		$request = sprintf('%s %s %s', $httpVerb, self::API_VERSION_URL_PATH . $path, $time);
+
+		return hash_hmac('sha1', $request, $this->privateKey);
 	}
 	
 	protected function getConnection() {
