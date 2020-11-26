@@ -1,5 +1,5 @@
 {
-	"name": "websupport/api_php",
+	"name": "gajdy/api_php",
 	"description": "Wrapper around cURL for simpler REST API communication",
 	"license": "GPL-3.0+",
 	"homepage": "https://github.com/websupport-sk/api_php",
